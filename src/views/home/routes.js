@@ -1,6 +1,6 @@
 export default [
     {
-        path: '/',
+        path: '/home',
         name: 'Home',
         meta: {
             requiresAuth: true,
@@ -14,7 +14,7 @@ export default [
         name: 'History',
         meta: {
             requiresAuth: true,
-            rootPage: 'history',
+            rootPage: 'home',
             title: 'Histórico'
         },
         component: () => import('./views/HistoryView.vue')
@@ -24,9 +24,29 @@ export default [
         name: 'Withdraw',
         meta: {
             requiresAuth: true,
-            rootPage: 'withdraw',
+            rootPage: 'home',
             title: 'Retirar'
         },
         component: () => import('./views/WithdrawView.vue')
+    },
+      {
+        path: '/profile',
+        name: 'Profile',
+        meta: {
+            requiresAuth: true,
+            rootPage: 'home',
+            title: 'Meu Perfil'
+        },
+        component: () => import('./views/ProfileView.vue')
+    },
+    {
+        path: '/notifications',
+        name: 'Notifications',
+        meta: {
+            requiresAuth: true,
+            rootPage: 'notifications',
+            title: 'Notificações'
+        },
+        component: () => import('./views/NotificationsView.vue')
     }
 ]

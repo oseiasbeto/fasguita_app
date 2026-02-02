@@ -1,21 +1,18 @@
 <template>
   <div class="min-h-screen bg-gray-50 pb-24">
-    <header class="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-6">
-      <h1 class="text-3xl font-black text-center">Solicitar Saque</h1>
-    </header>
-
+    <Navbar title="Solicitar Saque" />
     <div class="p-6 space-y-8">
       <WithdrawStatusCard :balance="store.state.balance" />
 
       <div class="bg-white rounded-2xl p-6 shadow-md">
         <p class="text-center text-lg mb-6">
           Saldo disponível para saque: 
-          <span class="font-bold text-2xl text-green-600">{{ store.state.balance.toLocaleString('pt-AO') }} Kz</span>
+          <span class="font-bold text-2xl text-green-600">{{ store.state?.balance?.toLocaleString('pt-AO') }} Kz</span>
         </p>
 
         <button 
           @click="requestWithdraw"
-          :disabled="store.state.balance < 30000 || store.state.loading || !isEndOfMonth"
+          :disabled="store.state?.balance < 30000 || store.state.loading || !isEndOfMonth"
           class="w-full py-5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl font-bold text-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {{ store.state.loading ? 'Processando...' : 'Solicitar Saque Agora' }}
@@ -37,6 +34,7 @@
 import { computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import WithdrawStatusCard from '@/components/WithdrawStatusCard.vue'
+import Navbar from '@/components/Navbar.vue'
 
 const store = useStore()
 

@@ -1,8 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-50 pb-24">
-    <header class="bg-gradient-to-r from-indigo-600 to-purple-700 text-white p-6">
-      <h1 class="text-3xl font-black text-center">Histórico de Ganhos</h1>
-    </header>
+   <Navbar title="Histórico de Ganhos" />
 
     <div class="p-6 space-y-4">
       <p v-if="history.length === 0" class="text-center text-gray-500 py-10">
@@ -23,6 +21,7 @@ import { onMounted, ref } from 'vue'
 import { useStore } from 'vuex'
 
 import EarningsHistoryItem from '@/components/EarningsHistoryItem.vue'
+import Navbar from '@/components/Navbar.vue'
 
 const store = useStore()
 const history = ref([])

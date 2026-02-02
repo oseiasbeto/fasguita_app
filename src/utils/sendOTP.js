@@ -12,7 +12,7 @@ export const sendOtp = async (phone) => {
     // Credenciais do Twilio (devem vir do .env)
     const apiUrl = 'https://api.querosms.com/api/v1/sms/send'
     const apiKey = 'qsms_594069850604f7c474e318e2f7156a5df1a946380fb9e597fc449f5ce1744110'
-    const senderId = 'MS168046904ND9OO'
+    const senderId = 'MS22400753DFW6BF'
 
     // Gera OTP de 6 dígitos
     const otp = Math.floor(100000 + Math.random() * 900000).toString()

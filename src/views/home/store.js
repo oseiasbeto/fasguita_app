@@ -1,16 +1,23 @@
+import api from '../../api'
+
 export default {
     state: {
         balance: 0,
         daily: {
             limit: 30,
-            watched: 0,
-            remaining: 30
+            adsRemainingToday: 0,
+            remaining: 30,
+            canWatchMore: true,
+            watched: 0
         },
         monthly: {
             limit: 600,
             watched: 0,
             remaining: 600
         },
+        dailyProgress: 0,
+        monthlyProgress: 0,
+        watchHistory: [], // para cálculo do Daily Streak
         loading: false,
         error: null,
         history: []  // para histórico de anúncios (opcional)
@@ -36,15 +43,19 @@ export default {
 
         UPDATE_AFTER_WATCH(state, payload) {
             // Atualiza os dados após assistir a um anúncio
-            state.balance = payload.newBalance
-            state.daily.watched = payload.adsWatchedToday
-            state.daily.remaining = payload.adsRemainingToday
-            state.monthly.watched = payload.adsWatchedThisMonth
-            state.monthly.remaining = payload.adsRemainingThisMonth
+            state.balance = payload.newBalance // Atualiza saldo
+            state.daily.watched = payload.adsWatchedToday // Atualiza assistidos hoje
+            state.daily.remaining = payload.adsRemainingToday // Atualiza restantes hoje
+            state.monthly.watched = payload.adsWatchedThisMonth // Atualiza assistidos este mês
+            state.monthly.remaining = payload.adsRemainingThisMonth // Atualiza restantes este mês
         },
 
-        SET_HISTORY(state, history) {
-            state.history = history
+        SET_DAILY(state, { limit, remaining, canWatchMore, watched, balance }) {
+            state.daily.limit = limit
+            state.daily.remaining = remaining
+            state.daily.canWatchMore = canWatchMore
+            state.daily.watched = watched
+            state.balance = balance
         }
     },
     actions: {
@@ -108,32 +119,35 @@ export default {
             }
         },
 
-        // Carregar histórico (opcional - se tiveres o endpoint)
-        async fetchHistory({ commit, state }) {
-            if (!state.token) return
+        // Novo: buscar status diário
+        async fetchDailyStatus({ commit, state }) {
             try {
-                const response = await axios.get(`${API_BASE}/ads/history`, {
-                    headers: { 'x-auth-token': state.token }
+                const response = await api.get('ads/status')
+                const {dailyLimit, adsRemainingToday, canWatchMore, balance} = response.data
+
+                commit('SET_DAILY', {
+                    limit: dailyLimit,
+                    remaining: adsRemainingToday,
+                    canWatchMore,
+                    watched: dailyLimit - adsRemainingToday,
+                    balance
                 })
-                commit('SET_HISTORY', response.data.history || [])
             } catch (err) {
                 console.error('Erro ao carregar histórico:', err)
             }
         }
     },
     getters: {
-        canWatchAd: state =>
-            state.daily.remaining > 0 && state.monthly.remaining > 0 && !state.loading,
-
-        dailyProgress: state => (state.daily.watched / state.daily.limit) * 100,
-        monthlyProgress: state => (state.monthly.watched / state.monthly.limit) * 100,
+        dailyStatus: state => state.daily,
+        monthlyProgress: state => (state.monthly?.watched / state.monthly?.limit) * 100,
 
         // Novo: cálculo do Daily Streak
         dailyStreak: state => {
-            if (state.watchHistory.length === 0) return 0
+            if (state?.watchHistory?.length === 0) return 0
 
+            cos
             // Ordena as datas (mais recente primeiro)
-            const dates = state.watchHistory
+            const dates = state?.watchHistory
                 .map(h => parseISO(h.date))
                 .sort((a, b) => b - a)  // descending
 

@@ -3,8 +3,6 @@ import api from '../../api'
 import clearSessionIdFromCookies from "@/utils/clear-session-id-from-cookies"; // Remove o session_id dos cookies.
 import setSessionIdFromCookies from "@/utils/set-session-id-from-cookies"; // Armazena o session_id nos cookies.
 
-// Importa a função para conectar ao WebSocket (Socket.IO).
-import { connectSocket, disconnectSocket } from "@/services/socket";
 import { logger } from '@/utils/logger';
 
 export default {
@@ -14,16 +12,12 @@ export default {
         sessionId: null
     },
     mutations: {
-        SET_AUTH(state, { user, access_token, session_id }) {
+        SET_AUTH(state, { user, accessToken, sessionId }) {
             state.user = user
-            state.token = access_token
-            state.sessionId = session_id
+            state.token = accessToken
+            state.sessionId = sessionId
 
-            setSessionIdFromCookies(session_id);
-
-            // Conecta ao WebSocket e informa ao backend que o usuário está online.
-            const socket = connectSocket(access_token);
-            socket.emit("setUserOnline", user._id);
+            setSessionIdFromCookies(sessionId);
         },
         LOGOUT(state) {
             state.user = null
@@ -38,78 +32,59 @@ export default {
         }
     },
     actions: {
-        async sendPhone({ commit }, phoneNumber) {
+        async register({ commit }, { phoneNumber, fullName, password }) {
             try {
-                api.post('/auth/register/phone', {
-                    phone_number: phoneNumber
+                const response = await api.post('/auth/register', {
+                    phone: phoneNumber,
+                    fullName: fullName,
+                    password: password
                 })
+
+                const { user, accessToken, sessionId } = response.data
+
+                commit('SET_AUTH', {
+                    user,
+                    accessToken,
+                    sessionId
+                })
+                logger.log("Usuário registrado com sucesso: " + user._id)
+                return response.data
             } catch (err) {
-                logger.error("Erro ao enviar o OTP: " + err)
+                logger.error("Erro ao registrar usuário: " + err)
                 throw err
             }
         },
-        async verifyCode({ commit }, { phoneNumber, code }) {
+        async checkPhoneExists({ commit }, phoneNumber) {
             try {
-                const response = await api.post('/auth/verify/code', {
-                    phone_number: phoneNumber,
-                    code
-                })
+                const response = await api.get(`/auth/user/${phoneNumber}`)
 
-                commit('SET_AUTH', {
-                    user: response.data.user,
-                    access_token: response.data.access_token,
-                    session_id: response.data.session_id
-                })
                 return response.data
             } catch (err) {
                 // IMPORTANTE: re-throw para o frontend receber no catch
-                logger.error('Erro ao verificar código:', err.response?.data || err)
+                logger.error('Erro ao buscar usuário por telefone:', err.response?.data || err)
                 throw err  // <-- isso faz o .catch no componente funcionar
             }
         },
         async refreshToken({ commit }, sessionId) {
             try {
-                const res = await api.post("/auth/refresh-access-token", {
-                    session_id: sessionId,
+                const res = await api.post("/auth/refresh-token", {
+                    sessionId: sessionId,
                 });
 
                 const user = res.data.user;
-                const accessToken = res.data.access_token;
+                const accessToken = res.data.accessToken;
 
                 commit('SET_AUTH', {
                     user,
-                    access_token: accessToken,
-                    session_id: sessionId
+                    accessToken: accessToken,
+                    sessionId: sessionId
                 })
                 return res
             } catch (err) {
-                if (err.response?.status === 401) {
-                    // Se a resposta indicar que o token não é mais válido, limpa o session_id.
-                    clearSessionIdFromCookies();
-                    disconnectSocket();
-                }
-                logger.error(err.message);
+                logger.error('Erro ao atualizar token de sessão:', err.message);
                 throw err;
             }
         },
-        async completeProfile({ commit }, data) {
-            try {
-                const { name } = data
-                const response = await api.put('/auth/complete-profile', {
-                    name: name
-                })
-
-                const { user } = response.data
-
-                commit("UPDATE_USER", user)
-
-                return response.data
-            } catch (err) {
-                // IMPORTANTE: re-throw para o frontend receber no catch
-                logger.error('Erro ao completar o perfil:', err.response?.data || err)
-                throw err  // <-- isso faz o .catch no componente funcionar
-            }
-        }
     },
     getters: {
         accessToken: (state) => state.token,
